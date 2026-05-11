@@ -281,6 +281,19 @@ document.addEventListener('keydown', e => { if(e.key==='?') debugEl.classList.to
 // ══════════════════════════════════════
 // INDEXEDDB — stores recorded audio blobs
 // ══════════════════════════════════════
+// Bundled recordings (fetched from recordings.json)
+let bundledRecordings = {}; // word -> dataURL
+(async function loadBundledRecordings() {
+  try {
+    const baseUrl = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
+    const resp = await fetch(baseUrl + 'recordings.json');
+    if (!resp.ok) { dbg('No bundled recordings found'); return; }
+    const clips = await resp.json();
+    clips.forEach(c => { bundledRecordings[c.word] = c.audio; });
+    dbg('Loaded ' + clips.length + ' bundled recordings');
+  } catch(e) { dbg('Bundled recordings fetch failed: ' + e.message); }
+})();
+
 let audioDB = null;
 function openAudioDB() {
   return new Promise((resolve, reject) => {
@@ -301,13 +314,27 @@ async function saveClip(word, blob) {
   });
 }
 async function getClip(word) {
-  const db = await openAudioDB();
-  return new Promise((resolve) => {
-    const tx = db.transaction('clips','readonly');
-    const req = tx.objectStore('clips').get(word);
-    req.onsuccess = () => resolve(req.result ? req.result.audio : null);
-    req.onerror = () => resolve(null);
-  });
+  // 1. Try IndexedDB (user's local recordings)
+  try {
+    const db = await openAudioDB();
+    const clip = await new Promise((resolve) => {
+      const tx = db.transaction('clips','readonly');
+      const req = tx.objectStore('clips').get(word);
+      req.onsuccess = () => resolve(req.result ? req.result.audio : null);
+      req.onerror = () => resolve(null);
+    });
+    if (clip) return clip;
+  } catch(e) { dbg('IndexedDB getClip error: '+e.message); }
+
+  // 2. Try bundled recordings (from recordings.json)
+  if (bundledRecordings[word]) {
+    dbg('Using bundled recording for: '+word);
+    // Convert dataURL to Blob for playback
+    const dataUrl = bundledRecordings[word];
+    const resp = await fetch(dataUrl);
+    return await resp.blob();
+  }
+  return null;
 }
 async function getAllClipKeys() {
   const db = await openAudioDB();
