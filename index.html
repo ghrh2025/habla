@@ -1,0 +1,1090 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>¡Habla! — Spanish Practice</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --green: #58cc02; --green-dark: #46a302;
+    --gold: #ffc800; --blue: #1cb0f6; --blue-dark: #0d8ecf;
+    --purple: #ce82ff; --orange: #ff9600;
+    --bg: #131f24; --card: #1a2e35; --card-light: #223d47;
+    --text: #ffffff; --text-muted: #8ba4ad; --border: #2a4a55;
+  }
+  body { font-family: 'Nunito', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
+  .screen { display: none; flex-direction: column; align-items: center; min-height: 100vh; padding: 30px 20px; }
+  .screen.active { display: flex; }
+
+  /* Server Warning */
+  #server-warning { display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:var(--bg); z-index:9999; flex-direction:column; align-items:center; justify-content:center; padding:40px; text-align:center; }
+  #server-warning.active { display:flex; }
+  .warning-icon { font-size:4em; margin-bottom:20px; }
+  .warning-title { font-size:1.8em; font-weight:900; margin-bottom:15px; color:var(--gold); }
+  .warning-text { font-size:1.1em; color:var(--text-muted); max-width:500px; line-height:1.7; }
+  .warning-code { background:var(--card); border:2px solid var(--border); border-radius:12px; padding:15px 25px; margin:20px 0; font-family:monospace; font-size:1.05em; color:var(--green); user-select:all; cursor:pointer; }
+  .warning-sub { font-size:0.9em; color:var(--text-muted); margin-top:10px; }
+
+  /* Profile */
+  #profile-screen { justify-content: center; gap: 40px; }
+  .app-title { font-size: 3em; font-weight: 900; text-align: center; }
+  .app-title span { color: var(--green); }
+  .app-subtitle { font-size: 1.1em; color: var(--text-muted); margin-top: -30px; text-align: center; }
+  .profiles { display: flex; gap: 25px; flex-wrap: wrap; justify-content: center; }
+  .profile-card { background:var(--card); border:3px solid var(--border); border-radius:20px; padding:30px 35px; text-align:center; cursor:pointer; transition:all 0.2s; min-width:160px; }
+  .profile-card:hover { border-color:var(--green); transform:translateY(-5px); box-shadow:0 10px 30px rgba(88,204,2,0.2); }
+  .profile-avatar { width:80px; height:80px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:2.5em; margin:0 auto 12px; }
+  .profile-name { font-size:1.3em; font-weight:800; }
+  .profile-stars { color:var(--gold); margin-top:6px; font-size:0.95em; font-weight:700; }
+
+  /* Skills */
+  #skill-screen { padding-top: 20px; }
+  .top-bar { width:100%; max-width:600px; display:flex; align-items:center; justify-content:space-between; margin-bottom:30px; }
+  .back-btn { background:var(--card); border:2px solid var(--border); color:var(--text); border-radius:12px; padding:8px 16px; font-family:inherit; font-size:1em; font-weight:700; cursor:pointer; transition:all 0.2s; }
+  .back-btn:hover { border-color:var(--green); }
+  .player-info { display:flex; align-items:center; gap:10px; }
+  .player-badge { background:var(--card-light); border-radius:12px; padding:6px 14px; font-weight:700; font-size:0.95em; }
+  .streak-badge { color:var(--orange); }
+  .star-badge { color:var(--gold); }
+  .greeting { font-size:1.8em; font-weight:800; text-align:center; margin-bottom:5px; }
+  .greeting-sub { color:var(--text-muted); margin-bottom:30px; text-align:center; }
+  .skills-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; width:100%; max-width:500px; }
+  .skill-card { background:var(--card); border:3px solid var(--border); border-radius:18px; padding:22px 18px; text-align:center; cursor:pointer; transition:all 0.2s; position:relative; overflow:hidden; }
+  .skill-card:hover { border-color:var(--blue); transform:translateY(-3px); box-shadow:0 8px 25px rgba(28,176,246,0.15); }
+  .skill-icon { font-size:2.5em; margin-bottom:8px; }
+  .skill-name { font-size:1.15em; font-weight:800; }
+  .skill-progress-wrap { margin-top:10px; background:var(--bg); border-radius:10px; height:8px; overflow:hidden; }
+  .skill-progress-bar { height:100%; background:var(--green); border-radius:10px; transition:width 0.5s; }
+  .skill-mastered { position:absolute; top:10px; right:10px; font-size:1.2em; }
+
+  /* Practice */
+  #practice-screen { justify-content:flex-start; padding-top:20px; }
+  .practice-top { width:100%; max-width:600px; display:flex; align-items:center; justify-content:space-between; margin-bottom:15px; }
+  .progress-wrap { flex:1; margin:0 20px; background:var(--bg); border-radius:10px; height:14px; overflow:hidden; border:2px solid var(--border); }
+  .progress-bar { height:100%; background:linear-gradient(90deg,var(--green),#7de843); border-radius:10px; transition:width 0.4s; }
+  .round-counter { font-weight:700; color:var(--text-muted); font-size:0.95em; white-space:nowrap; }
+
+  .practice-card { background:var(--card); border:3px solid var(--border); border-radius:24px; padding:35px 30px; text-align:center; width:100%; max-width:500px; margin-top:20px; }
+  .prompt-image { font-size:4em; margin-bottom:10px; line-height:1.2; }
+  .prompt-label { color:var(--text-muted); font-size:1em; font-weight:700; margin-bottom:6px; }
+  .prompt-english { font-size:1.6em; font-weight:800; margin-bottom:16px; }
+  .prompt-divider { width:60px; height:3px; background:var(--border); margin:0 auto 16px; border-radius:2px; }
+  .prompt-spanish { font-size:2.2em; font-weight:900; color:var(--green); margin-bottom:8px; }
+  .hint-text { color:var(--text-muted); font-size:0.9em; margin-bottom:16px; font-style:italic; }
+
+  .listen-btn { background:rgba(28,176,246,0.15); border:2px solid var(--blue); color:var(--blue); border-radius:14px; padding:10px 22px; font-size:1.1em; font-family:inherit; font-weight:700; cursor:pointer; transition:all 0.2s; margin-bottom:18px; display:inline-flex; align-items:center; gap:8px; }
+  .listen-btn:hover { background:rgba(28,176,246,0.25); transform:scale(1.03); }
+  .listen-btn.playing { background:rgba(28,176,246,0.3); border-color:var(--green); color:var(--green); }
+
+  .color-swatch { width:80px; height:80px; border-radius:50%; margin:0 auto 10px; border:4px solid rgba(255,255,255,0.2); box-shadow:0 4px 15px rgba(0,0,0,0.3); }
+
+  .mic-area { display:flex; align-items:center; justify-content:center; gap:16px; margin-top:5px; }
+  .mic-btn { width:90px; height:90px; border-radius:50%; background:var(--blue); border:4px solid var(--blue-dark); color:white; font-size:2.2em; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.2s; flex-shrink:0; }
+  .mic-btn:hover { transform:scale(1.08); }
+  .mic-btn.listening { background:#ff4b4b; border-color:#e63e3e; animation:pulse-mic 1s infinite; }
+  @keyframes pulse-mic { 0%,100%{box-shadow:0 0 0 0 rgba(255,75,75,0.5);} 50%{box-shadow:0 0 0 18px rgba(255,75,75,0);} }
+
+  .skip-btn { background:var(--card-light); border:2px solid var(--border); color:var(--text-muted); border-radius:14px; padding:10px 18px; font-family:inherit; font-size:0.95em; font-weight:700; cursor:pointer; transition:all 0.2s; }
+  .skip-btn:hover { border-color:var(--blue); color:var(--text); }
+
+  .heard-text { margin-top:18px; font-size:1.1em; color:var(--text-muted); min-height:30px; font-weight:600; }
+
+  /* Feedback */
+  .feedback-overlay { position:fixed; top:0; left:0; right:0; bottom:0; display:none; align-items:center; justify-content:center; z-index:100; background:rgba(0,0,0,0.6); }
+  .feedback-overlay.active { display:flex; }
+  .feedback-box { text-align:center; padding:50px 60px; border-radius:30px; animation:pop-in 0.35s cubic-bezier(0.34,1.56,0.64,1); max-width:90vw; }
+  @keyframes pop-in { 0%{transform:scale(0.5);opacity:0;} 100%{transform:scale(1);opacity:1;} }
+  .feedback-icon { font-size:5em; margin-bottom:15px; }
+  .feedback-text { font-size:1.8em; font-weight:900; }
+  .feedback-sub { font-size:1.1em; margin-top:8px; font-weight:600; }
+  .feedback-box.success { background:#0d3d0d; border:4px solid var(--green); }
+  .feedback-box.success .feedback-text { color:var(--green); }
+  .feedback-box.success .feedback-sub { color:#8bda6b; }
+  .feedback-box.miss { background:#1a2228; border:4px solid #3a4f58; }
+  .feedback-box.miss .feedback-text { color:#8ba4ad; }
+  .feedback-box.miss .feedback-sub { color:var(--blue); }
+
+  /* Confetti */
+  .confetti-container { position:fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:200; overflow:hidden; }
+  .confetti-piece { position:absolute; width:12px; height:12px; top:-20px; animation:confetti-fall 1.5s ease-out forwards; }
+  @keyframes confetti-fall { 0%{transform:translateY(0) rotate(0deg) scale(1);opacity:1;} 100%{transform:translateY(105vh) rotate(720deg) scale(0.5);opacity:0;} }
+
+  /* Round Complete */
+  .round-complete { text-align:center; padding:40px 20px; width:100%; max-width:500px; }
+  .round-complete-icon { font-size:4em; margin-bottom:10px; }
+  .round-complete-title { font-size:2em; font-weight:900; color:var(--gold); margin-bottom:10px; }
+  .round-complete-stats { color:var(--text-muted); font-size:1.1em; margin-bottom:10px; }
+  .round-stars { font-size:2.5em; margin:15px 0; }
+  .big-btn { background:var(--green); border:4px solid var(--green-dark); color:white; font-family:inherit; font-size:1.15em; font-weight:800; padding:14px 40px; border-radius:16px; cursor:pointer; transition:all 0.2s; margin:8px; }
+  .big-btn:hover { transform:translateY(-2px); box-shadow:0 6px 20px rgba(88,204,2,0.3); }
+  .big-btn.secondary { background:var(--card); border-color:var(--border); }
+  .big-btn.secondary:hover { border-color:var(--green); box-shadow:none; }
+
+  /* Recording Studio */
+  #studio-screen { padding-top: 20px; }
+  .studio-header { text-align:center; margin-bottom:20px; }
+  .studio-title { font-size:1.6em; font-weight:900; margin-bottom:5px; }
+  .studio-progress { color:var(--text-muted); font-size:1em; font-weight:700; }
+  .studio-progress span { color:var(--green); }
+  .studio-tabs { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-bottom:20px; max-width:600px; }
+  .studio-tab { background:var(--card); border:2px solid var(--border); color:var(--text-muted); border-radius:10px; padding:6px 14px; font-family:inherit; font-size:0.85em; font-weight:700; cursor:pointer; transition:all 0.2s; }
+  .studio-tab.active { border-color:var(--blue); color:var(--blue); background:rgba(28,176,246,0.1); }
+  .studio-tab .tab-check { color:var(--green); }
+  .word-list { width:100%; max-width:600px; display:flex; flex-direction:column; gap:10px; }
+  .word-row { background:var(--card); border:2px solid var(--border); border-radius:14px; padding:14px 18px; display:flex; align-items:center; gap:14px; transition:all 0.2s; }
+  .word-row.recorded { border-color:rgba(88,204,2,0.3); }
+  .word-info { flex:1; min-width:0; }
+  .word-es { font-size:1.2em; font-weight:800; color:var(--green); }
+  .word-en { font-size:0.85em; color:var(--text-muted); }
+  .word-img { font-size:1.8em; flex-shrink:0; }
+  .rec-btn { width:48px; height:48px; border-radius:50%; border:3px solid var(--border); background:var(--card-light); color:var(--text); font-size:1.3em; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.2s; flex-shrink:0; }
+  .rec-btn:hover { border-color:var(--blue); }
+  .rec-btn.recording { background:#ff4b4b; border-color:#e63e3e; animation:pulse-mic 1s infinite; }
+  .rec-btn.has-recording { border-color:var(--green); }
+  .play-btn { width:40px; height:40px; border-radius:50%; border:2px solid var(--border); background:var(--card-light); color:var(--blue); font-size:1.1em; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.2s; flex-shrink:0; }
+  .play-btn:hover { border-color:var(--blue); }
+  .play-btn.hidden { display:none; }
+  .rec-status { font-size:0.75em; color:var(--text-muted); text-align:center; margin-top:2px; }
+  .rec-status.done { color:var(--green); }
+
+  /* Debug console (hidden by default, toggle with ? key) */
+  #debug-log { display:none; position:fixed; bottom:0; left:0; right:0; background:rgba(0,0,0,0.9); color:#0f0; font-family:monospace; font-size:12px; padding:10px; max-height:200px; overflow-y:auto; z-index:999; }
+  #debug-log.visible { display:block; }
+
+  @media (max-width:500px) {
+    .skills-grid { grid-template-columns:1fr; max-width:300px; }
+    .profiles { flex-direction:column; align-items:center; }
+    .app-title { font-size:2.2em; }
+    .prompt-spanish { font-size:1.7em; }
+    .prompt-image { font-size:3em; }
+    .feedback-box { padding:35px 30px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="server-warning">
+  <div class="warning-icon">🎤</div>
+  <div class="warning-title">One Quick Step!</div>
+  <div class="warning-text">Chrome needs this app served from localhost for the microphone to work.<br>Double-click <b>start-habla.command</b> in the same folder, or paste this in Terminal:</div>
+  <div class="warning-code" id="launch-command" onclick="navigator.clipboard.writeText(this.textContent).then(()=>this.style.borderColor='#58cc02')">python3 -m http.server 8080</div>
+  <div class="warning-sub">Then open <b>http://localhost:8080/habla-spanish.html</b> in Chrome</div>
+</div>
+
+<div id="profile-screen" class="screen active">
+  <div class="app-title">¡<span>Habla</span>!</div>
+  <p class="app-subtitle">Spanish Speaking Practice</p>
+  <div class="profiles">
+    <div class="profile-card" onclick="selectProfile('Tessa')">
+      <div class="profile-avatar" style="background:linear-gradient(135deg,#ce82ff,#a259d9);">🦋</div>
+      <div class="profile-name">Tessa</div>
+      <div class="profile-stars" id="stars-Tessa">⭐ 0 stars</div>
+    </div>
+    <div class="profile-card" onclick="selectProfile('Audrey')">
+      <div class="profile-avatar" style="background:linear-gradient(135deg,#ff82b4,#d95993);">🌸</div>
+      <div class="profile-name">Audrey</div>
+      <div class="profile-stars" id="stars-Audrey">⭐ 0 stars</div>
+    </div>
+    <div class="profile-card" onclick="selectProfile('Aiden')">
+      <div class="profile-avatar" style="background:linear-gradient(135deg,#1cb0f6,#0d8ecf);">🚀</div>
+      <div class="profile-name">Aiden</div>
+      <div class="profile-stars" id="stars-Aiden">⭐ 0 stars</div>
+    </div>
+  </div>
+  <button class="big-btn secondary" onclick="openStudio()" style="margin-top:-10px;font-size:0.95em;padding:10px 28px;">🎙️ Record My Voice</button>
+</div>
+
+<!-- ═══════ RECORDING STUDIO ═══════ -->
+<div id="studio-screen" class="screen">
+  <div class="top-bar">
+    <button class="back-btn" onclick="closeStudio()">← Back</button>
+    <div class="studio-header">
+      <div class="studio-title">🎙️ Recording Studio</div>
+      <div class="studio-progress" id="studio-progress">Recorded: <span>0</span> / 80 words</div>
+    </div>
+  </div>
+  <div class="studio-tabs" id="studio-tabs"></div>
+  <div class="word-list" id="word-list"></div>
+</div>
+
+<div id="skill-screen" class="screen">
+  <div class="top-bar">
+    <button class="back-btn" onclick="showScreen('profile-screen');refreshProfileScreen();">← Back</button>
+    <div class="player-info">
+      <span class="player-badge streak-badge" id="streak-display">🔥 0</span>
+      <span class="player-badge star-badge" id="star-display">⭐ 0</span>
+    </div>
+  </div>
+  <div class="greeting" id="skill-greeting">¡Hola!</div>
+  <p class="greeting-sub">Pick a skill to practice</p>
+  <div class="skills-grid" id="skills-grid"></div>
+</div>
+
+<div id="practice-screen" class="screen">
+  <div class="practice-top">
+    <button class="back-btn" onclick="endPractice()">← Quit</button>
+    <div class="progress-wrap"><div class="progress-bar" id="practice-progress"></div></div>
+    <span class="round-counter" id="round-counter">1 / 8</span>
+  </div>
+  <div class="practice-card" id="practice-card">
+    <div class="prompt-image" id="prompt-image">🔴</div>
+    <p class="prompt-label">Say this in Spanish:</p>
+    <p class="prompt-english" id="prompt-english">Red</p>
+    <div class="prompt-divider"></div>
+    <p class="prompt-spanish" id="prompt-spanish">Rojo</p>
+    <p class="hint-text" id="hint-text"></p>
+    <button class="listen-btn" id="listen-btn" onclick="speakWord()">🔊 Listen first</button>
+    <div class="mic-area">
+      <button class="mic-btn" id="mic-btn" onclick="toggleListening()">🎤</button>
+      <button class="skip-btn" id="skip-btn" onclick="skipWord()">Skip →</button>
+    </div>
+    <p class="heard-text" id="heard-text"></p>
+  </div>
+  <div class="round-complete" id="round-complete" style="display:none;">
+    <div class="round-complete-icon">🎉</div>
+    <div class="round-complete-title" id="complete-title">Awesome!</div>
+    <div class="round-complete-stats" id="complete-stats"></div>
+    <div class="round-stars" id="complete-stars"></div>
+    <div>
+      <button class="big-btn" onclick="startPractice(currentSkill)">Practice Again</button>
+      <button class="big-btn secondary" onclick="endPractice()">Back to Skills</button>
+    </div>
+  </div>
+</div>
+
+<div class="feedback-overlay" id="feedback-overlay">
+  <div class="feedback-box" id="feedback-box">
+    <div class="feedback-icon" id="feedback-icon">✅</div>
+    <div class="feedback-text" id="feedback-text">¡Perfecto!</div>
+    <div class="feedback-sub" id="feedback-sub"></div>
+  </div>
+</div>
+<div class="confetti-container" id="confetti-container"></div>
+<div id="debug-log"></div>
+
+<script>
+// ══════════════════════════════════════
+// DEBUG LOGGER (press ? to toggle)
+// ══════════════════════════════════════
+const debugEl = document.getElementById('debug-log');
+function dbg(msg) {
+  console.log('[Habla]', msg);
+  const line = document.createElement('div');
+  line.textContent = new Date().toLocaleTimeString() + ' | ' + msg;
+  debugEl.appendChild(line);
+  debugEl.scrollTop = debugEl.scrollHeight;
+}
+document.addEventListener('keydown', e => { if(e.key==='?') debugEl.classList.toggle('visible'); });
+
+// ══════════════════════════════════════
+// INDEXEDDB — stores recorded audio blobs
+// ══════════════════════════════════════
+let audioDB = null;
+function openAudioDB() {
+  return new Promise((resolve, reject) => {
+    if (audioDB) { resolve(audioDB); return; }
+    const req = indexedDB.open('habla-recordings', 1);
+    req.onupgradeneeded = (e) => { e.target.result.createObjectStore('clips', { keyPath: 'word' }); };
+    req.onsuccess = () => { audioDB = req.result; resolve(audioDB); };
+    req.onerror = () => { dbg('IndexedDB error: '+req.error); reject(req.error); };
+  });
+}
+async function saveClip(word, blob) {
+  const db = await openAudioDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('clips','readwrite');
+    tx.objectStore('clips').put({ word: word, audio: blob, ts: Date.now() });
+    tx.oncomplete = () => { dbg('Saved clip: '+word); resolve(); };
+    tx.onerror = () => reject(tx.error);
+  });
+}
+async function getClip(word) {
+  const db = await openAudioDB();
+  return new Promise((resolve) => {
+    const tx = db.transaction('clips','readonly');
+    const req = tx.objectStore('clips').get(word);
+    req.onsuccess = () => resolve(req.result ? req.result.audio : null);
+    req.onerror = () => resolve(null);
+  });
+}
+async function getAllClipKeys() {
+  const db = await openAudioDB();
+  return new Promise((resolve) => {
+    const tx = db.transaction('clips','readonly');
+    const req = tx.objectStore('clips').getAllKeys();
+    req.onsuccess = () => resolve(req.result || []);
+    req.onerror = () => resolve([]);
+  });
+}
+
+// ══════════════════════════════════════
+// FILE:// DETECTION
+// ══════════════════════════════════════
+if (window.location.protocol === 'file:') {
+  document.getElementById('server-warning').classList.add('active');
+  const dir = decodeURIComponent(window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/')));
+  document.getElementById('launch-command').textContent = 'cd "' + dir + '" && python3 -m http.server 8080';
+}
+
+// ══════════════════════════════════════
+// SOUND EFFECTS
+// ══════════════════════════════════════
+const AudioCtx = window.AudioContext || window.webkitAudioContext;
+let audioCtx;
+function ensureAudio() { if(!audioCtx) audioCtx = new AudioCtx(); return audioCtx; }
+
+function playSuccess() {
+  const ctx = ensureAudio();
+  [523.25,659.25,783.99].forEach((f,i) => {
+    const o=ctx.createOscillator(), g=ctx.createGain();
+    o.type='sine'; o.frequency.value=f;
+    g.gain.setValueAtTime(0.15,ctx.currentTime+i*0.12);
+    g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+i*0.12+0.4);
+    o.connect(g).connect(ctx.destination);
+    o.start(ctx.currentTime+i*0.12); o.stop(ctx.currentTime+i*0.12+0.4);
+  });
+}
+function playGentleWhoops() {
+  const ctx = ensureAudio();
+  const o=ctx.createOscillator(), g=ctx.createGain();
+  o.type='sine'; o.frequency.value=350;
+  o.frequency.linearRampToValueAtTime(280,ctx.currentTime+0.25);
+  g.gain.setValueAtTime(0.06,ctx.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.35);
+  o.connect(g).connect(ctx.destination); o.start(); o.stop(ctx.currentTime+0.35);
+}
+function playRoundComplete() {
+  const ctx = ensureAudio();
+  [523.25,587.33,659.25,783.99,1046.50].forEach((f,i) => {
+    const o=ctx.createOscillator(), g=ctx.createGain();
+    o.type='triangle'; o.frequency.value=f;
+    g.gain.setValueAtTime(0.12,ctx.currentTime+i*0.1);
+    g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+i*0.1+0.5);
+    o.connect(g).connect(ctx.destination);
+    o.start(ctx.currentTime+i*0.1); o.stop(ctx.currentTime+i*0.1+0.5);
+  });
+}
+function spawnConfetti() {
+  const c=document.getElementById('confetti-container');
+  const cols=['#58cc02','#ffc800','#1cb0f6','#ce82ff','#ff9600','#ff82b4'];
+  for(let i=0;i<50;i++){const p=document.createElement('div');p.className='confetti-piece';p.style.left=Math.random()*100+'%';p.style.background=cols[Math.floor(Math.random()*cols.length)];p.style.borderRadius=Math.random()>0.5?'50%':'2px';p.style.animationDelay=Math.random()*0.5+'s';p.style.animationDuration=(1+Math.random())+'s';c.appendChild(p);}
+  setTimeout(()=>c.innerHTML='',2500);
+}
+
+// ══════════════════════════════════════
+// TEXT-TO-SPEECH: Google Translate (natural voice)
+// with robust fallback to browser TTS
+// ══════════════════════════════════════
+let currentAudio = null;
+let bestSpanishVoice = null;
+
+// Pre-load the best available browser voice as fallback
+function loadVoices() {
+  const voices = speechSynthesis.getVoices();
+  const prefs = [
+    v => v.lang.startsWith('es') && /paulina|jorge|monica|natural|premium|enhanced/i.test(v.name),
+    v => v.lang === 'es-MX',
+    v => v.lang === 'es-US',
+    v => v.lang === 'es-419',
+    v => v.lang.startsWith('es') && !/compact/i.test(v.name),
+    v => v.lang.startsWith('es'),
+  ];
+  for (const pref of prefs) {
+    const m = voices.find(pref);
+    if (m) { bestSpanishVoice = m; dbg('Fallback voice: ' + m.name + ' (' + m.lang + ')'); return; }
+  }
+  dbg('No Spanish voice found for fallback');
+}
+speechSynthesis.onvoiceschanged = loadVoices;
+loadVoices();
+
+function speakWord() {
+  const word = roundWords[roundIndex];
+  const text = word.es.replace(/[¿¡…]/g,'').trim();
+  dbg('Speaking: ' + text);
+  playTTS(text);
+}
+
+async function playTTS(text, onEnd) {
+  if (currentAudio) { currentAudio.pause(); currentAudio = null; }
+  speechSynthesis.cancel();
+
+  const btn = document.getElementById('listen-btn');
+  if(btn) btn.classList.add('playing');
+
+  let settled = false;
+  function settle() {
+    if (settled) return; settled = true;
+    if(btn) btn.classList.remove('playing');
+    currentAudio = null;
+    if(onEnd) onEnd();
+  }
+
+  // 1. Try user's own recording first
+  try {
+    const clip = await getClip(text);
+    if (clip) {
+      dbg('Playing user recording for: '+text);
+      const audio = new Audio(URL.createObjectURL(clip));
+      currentAudio = audio;
+      audio.onended = () => { dbg('User recording played OK'); settle(); };
+      audio.onerror = () => { dbg('User recording failed, falling through'); playTTSGoogle(text, settle); };
+      audio.play().catch(() => playTTSGoogle(text, settle));
+      return;
+    }
+  } catch(e) { dbg('IndexedDB lookup failed: '+e.message); }
+
+  // 2. Fall through to Google TTS
+  playTTSGoogle(text, settle);
+}
+
+function playTTSGoogle(text, settle) {
+  const encoded = encodeURIComponent(text);
+  const url = 'https://translate.google.com/translate_tts?ie=UTF-8&tl=es&client=tw-ob&ttsspeed=0.24&q=' + encoded;
+  const audio = new Audio();
+  currentAudio = audio;
+
+  audio.onended = () => { dbg('Google TTS played OK'); settle(); };
+  audio.onerror = () => { dbg('Google TTS failed — browser fallback'); fallbackSpeak(text, settle); };
+
+  audio.src = url;
+  audio.play().then(() => dbg('Google TTS started')).catch(err => {
+    dbg('Google TTS rejected: '+err.message); fallbackSpeak(text, settle);
+  });
+
+  setTimeout(() => {
+    if (audio.paused && audio.readyState < 3) { dbg('Google TTS timeout'); audio.pause(); fallbackSpeak(text, settle); }
+  }, 5000);
+}
+
+function fallbackSpeak(text, onDone) {
+  const utt = new SpeechSynthesisUtterance(text);
+  utt.lang = 'es-MX';
+  utt.rate = 0.7;
+  utt.pitch = 1.0;
+  if (bestSpanishVoice) utt.voice = bestSpanishVoice;
+  utt.onend = () => { if(onDone) onDone(); };
+  speechSynthesis.speak(utt);
+}
+
+// ══════════════════════════════════════
+// SKILL DATA — 8 CATEGORIES, 80 WORDS
+// Each word has alt: array of accepted
+// speech recognition transcriptions
+// ══════════════════════════════════════
+const SKILLS = {
+  colors: {
+    name:'Colors', icon:'🎨',
+    words:[
+      {en:'Red',es:'Rojo',hint:'ROH-ho',img:'🔴',color:'#e74c3c',alt:['rojo','roho','roo ho']},
+      {en:'Blue',es:'Azul',hint:'ah-SOOL',img:'🔵',color:'#3498db',alt:['azul','asul','a sul']},
+      {en:'Green',es:'Verde',hint:'BEHR-deh',img:'🟢',color:'#2ecc71',alt:['verde','berde','ver de']},
+      {en:'Yellow',es:'Amarillo',hint:'ah-mah-REE-yo',img:'🟡',color:'#f1c40f',alt:['amarillo','amario','amarío','a marillo']},
+      {en:'White',es:'Blanco',hint:'BLAHN-koh',img:'⚪',color:'#ecf0f1',alt:['blanco','blanko','plan co']},
+      {en:'Black',es:'Negro',hint:'NEH-groh',img:'⚫',color:'#7f8c8d',alt:['negro','ne gro']},
+      {en:'Orange',es:'Naranja',hint:'nah-RAHN-hah',img:'🟠',color:'#e67e22',alt:['naranja','naranxa','na ranja']},
+      {en:'Pink',es:'Rosa',hint:'ROH-sah',img:'🩷',color:'#ff69b4',alt:['rosa','roza','ro sa']},
+      {en:'Purple',es:'Morado',hint:'moh-RAH-doh',img:'🟣',color:'#9b59b6',alt:['morado','morao','mora do']},
+      {en:'Brown',es:'Marrón',hint:'mah-ROHN',img:'🟤',color:'#a0522d',alt:['marron','marrón','maron','ma ron']},
+    ]
+  },
+  numbers: {
+    name:'Numbers', icon:'🔢',
+    words:[
+      {en:'One',es:'Uno',hint:'OO-noh',img:'1️⃣',alt:['uno','una','un o','u no','unos','un','huno','uño','uno ','oono']},
+      {en:'Two',es:'Dos',hint:'dohs',img:'2️⃣',alt:['dos','do s','dós','dose','doce','doc','doss','toss','dios','dos ','dost','tose']},
+      {en:'Three',es:'Tres',hint:'trehs',img:'3️⃣',alt:['tres','trez','tre s','trace','trece','trés','dress','press','tress']},
+      {en:'Four',es:'Cuatro',hint:'KWAH-troh',img:'4️⃣',alt:['cuatro','quatro','cuadro','cuá tro']},
+      {en:'Five',es:'Cinco',hint:'SEEN-koh',img:'5️⃣',alt:['cinco','sinko','zinco','sin co','think o']},
+      {en:'Six',es:'Seis',hint:'says',img:'6️⃣',alt:['seis','seys','says','sais','se is','say','seis ','ces','sets','seiz','safe','sais ','sase']},
+      {en:'Seven',es:'Siete',hint:'see-EH-teh',img:'7️⃣',alt:['siete','ciete','syete','si ete','cte']},
+      {en:'Eight',es:'Ocho',hint:'OH-choh',img:'8️⃣',alt:['ocho','ochio','o cho','ojos']},
+      {en:'Nine',es:'Nueve',hint:'NWEH-beh',img:'9️⃣',alt:['nueve','nuebe','nwebe','nu eve','nueva']},
+      {en:'Ten',es:'Diez',hint:'dee-EHS',img:'🔟',alt:['diez','dies','diés','di es','dios','this']},
+    ]
+  },
+  animals: {
+    name:'Animals', icon:'🐾',
+    words:[
+      {en:'Dog',es:'Perro',hint:'PEH-rroh',img:'🐶',alt:['perro','pero','perró','pe ro','pedro']},
+      {en:'Cat',es:'Gato',hint:'GAH-toh',img:'🐱',alt:['gato','gatoh','ga to','gatos','gata','gatto','dato','gato ','cato','gat']},
+      {en:'Bird',es:'Pájaro',hint:'PAH-hah-roh',img:'🐦',alt:['pajaro','pájaro','paharo','pa jaro']},
+      {en:'Fish',es:'Pez',hint:'pehs',img:'🐟',alt:['pez','pes','pés','peces','pet','pec','pace','pez ','peso','pues','vez','paz','les','pezz','peas','pest','pets','des','pess','petz','pezo','beds','best','bees']},
+      {en:'Horse',es:'Caballo',hint:'kah-BAH-yoh',img:'🐴',alt:['caballo','cabayo','cavallo','ca ballo','caballos']},
+      {en:'Cow',es:'Vaca',hint:'BAH-kah',img:'🐮',alt:['vaca','baca','baka','ba ca','vacas']},
+      {en:'Pig',es:'Cerdo',hint:'SEHR-doh',img:'🐷',alt:['cerdo','serdo','zerdo','ser do','cerdos']},
+      {en:'Chicken',es:'Pollo',hint:'POH-yoh',img:'🐔',alt:['pollo','poyo','poio','po yo','pollos']},
+      {en:'Duck',es:'Pato',hint:'PAH-toh',img:'🦆',alt:['pato','patoh','pa to','plato','patos','pata','patto','dato','gato','palo','pato ','pat']},
+      {en:'Rabbit',es:'Conejo',hint:'koh-NEH-hoh',img:'🐰',alt:['conejo','coneho','conecho','co nejo','conejos']},
+    ]
+  },
+  greetings: {
+    name:'Greetings', icon:'👋',
+    words:[
+      {en:'Hello',es:'Hola',hint:'OH-lah',img:'👋',alt:['hola','ola','o la','jola','hola ']},
+      {en:'Good morning',es:'Buenos días',hint:'BWEH-nohs DEE-ahs',img:'🌅',alt:['buenos dias','buenos días','buenos dia','buenosdias','bueno día','wendy as']},
+      {en:'Good night',es:'Buenas noches',hint:'BWEH-nahs NOH-chehs',img:'🌙',alt:['buenas noches','buenasnoches','buenas noche','buena noche']},
+      {en:'Goodbye',es:'Adiós',hint:'ah-dee-OHS',img:'👋',alt:['adios','adiós','adió','a dios','adiós ','audio']},
+      {en:'Please',es:'Por favor',hint:'pohr fah-BOHR',img:'🙏',alt:['por favor','porfavor','por fabor','por fa bor','por fa']},
+      {en:'Thank you',es:'Gracias',hint:'GRAH-see-ahs',img:'😊',alt:['gracias','grasias','gracia','gra cias','gracia']},
+      {en:"You're welcome",es:'De nada',hint:'deh NAH-dah',img:'😄',alt:['de nada','denada','de na da','de naa']},
+      {en:'Excuse me',es:'Perdón',hint:'pehr-DOHN',img:'🙋',alt:['perdon','perdón','perdoné','per don','perdón ']},
+      {en:'How are you?',es:'¿Cómo estás?',hint:'KOH-moh ehs-TAHS',img:'🤗',alt:['como estas','cómo estás','como esta','comoestas','cómo está']},
+      {en:'My name is…',es:'Me llamo',hint:'meh YAH-moh',img:'🏷️',alt:['me llamo','mellamo','me yamo','me amo','me llamo ']},
+    ]
+  },
+  food: {
+    name:'Food', icon:'🍎',
+    words:[
+      {en:'Apple',es:'Manzana',hint:'mahn-SAH-nah',img:'🍎',alt:['manzana','mansana','man sana']},
+      {en:'Banana',es:'Plátano',hint:'PLAH-tah-noh',img:'🍌',alt:['platano','plátano','platanó','pla tano']},
+      {en:'Bread',es:'Pan',hint:'pahn',img:'🍞',alt:['pan','pán','pam','pan ','pond','plan','pand','pana','pen','ban','pawn','pant','pain','pont']},
+      {en:'Water',es:'Agua',hint:'AH-gwah',img:'💧',alt:['agua','agwa','a gua','ahua','awa','agua ','ahora','aqua','aguas','aga','haga']},
+      {en:'Milk',es:'Leche',hint:'LEH-cheh',img:'🥛',alt:['leche','letche','le che','lecheh']},
+      {en:'Rice',es:'Arroz',hint:'ah-ROHS',img:'🍚',alt:['arroz','aros','arros','a ros','arose']},
+      {en:'Egg',es:'Huevo',hint:'WEH-boh',img:'🥚',alt:['huevo','wevo','uevo','hue vo','web o']},
+      {en:'Cheese',es:'Queso',hint:'KEH-soh',img:'🧀',alt:['queso','keso','quéso','que so','case o']},
+      {en:'Chicken',es:'Pollo',hint:'POH-yoh',img:'🍗',alt:['pollo','poyo','poio','po yo']},
+      {en:'Ice cream',es:'Helado',hint:'eh-LAH-doh',img:'🍦',alt:['helado','elado','jelado','e lado','helados']},
+    ]
+  },
+  family: {
+    name:'Family', icon:'👨‍👩‍👧‍👦',
+    words:[
+      {en:'Mom',es:'Mamá',hint:'mah-MAH',img:'👩',alt:['mama','mamá','mami','ma má','mama ']},
+      {en:'Dad',es:'Papá',hint:'pah-PAH',img:'👨',alt:['papa','papá','papi','pa pá','papas']},
+      {en:'Brother',es:'Hermano',hint:'ehr-MAH-noh',img:'👦',alt:['hermano','ermano','her mano','hermanos']},
+      {en:'Sister',es:'Hermana',hint:'ehr-MAH-nah',img:'👧',alt:['hermana','ermana','her mana','hermanas']},
+      {en:'Grandma',es:'Abuela',hint:'ah-BWEH-lah',img:'👵',alt:['abuela','abuelah','abuéla','a buela','abuelas']},
+      {en:'Grandpa',es:'Abuelo',hint:'ah-BWEH-loh',img:'👴',alt:['abuelo','abueloh','abuélo','a buelo','abuelos']},
+      {en:'Baby',es:'Bebé',hint:'beh-BEH',img:'👶',alt:['bebe','bebé','bébé','be bé','baby']},
+      {en:'Friend',es:'Amigo',hint:'ah-MEE-goh',img:'🤝',alt:['amigo','amiga','amigoh','a migo','amigos']},
+      {en:'Family',es:'Familia',hint:'fah-MEE-lee-ah',img:'👨‍👩‍👧‍👦',alt:['familia','familía','fa milia','familias']},
+      {en:'Teacher',es:'Maestro',hint:'mah-EHS-troh',img:'👩‍🏫',alt:['maestro','maestra','maestroh','ma estro']},
+    ]
+  },
+  body: {
+    name:'Body', icon:'🦶',
+    words:[
+      {en:'Head',es:'Cabeza',hint:'kah-BEH-sah',img:'🗣️',alt:['cabeza','cabesa','kaveza','ca beza']},
+      {en:'Hand',es:'Mano',hint:'MAH-noh',img:'✋',alt:['mano','manoh','ma no','manos','mono']},
+      {en:'Foot',es:'Pie',hint:'pee-EH',img:'🦶',alt:['pie','pié','pieh','pi e','pies','be','bie','piel','pier','pee','pi','pile','pine','vie','pie ','piee']},
+      {en:'Eyes',es:'Ojos',hint:'OH-hohs',img:'👀',alt:['ojos','ohos','ojo','o jos','oh hos']},
+      {en:'Mouth',es:'Boca',hint:'BOH-kah',img:'👄',alt:['boca','boka','bocah','bo ca','bocas']},
+      {en:'Nose',es:'Nariz',hint:'nah-REES',img:'👃',alt:['nariz','narís','naris','na riz','nariz ']},
+      {en:'Ears',es:'Orejas',hint:'oh-REH-hahs',img:'👂',alt:['orejas','oreha','oreja','o rejas','ore has']},
+      {en:'Hair',es:'Pelo',hint:'PEH-loh',img:'💇',alt:['pelo','peloh','pe lo','pelos','pedal']},
+      {en:'Arm',es:'Brazo',hint:'BRAH-soh',img:'💪',alt:['brazo','braso','brazoh','bra so','brazos']},
+      {en:'Leg',es:'Pierna',hint:'pee-EHR-nah',img:'🦵',alt:['pierna','piérna','pi erna','piernas']},
+    ]
+  },
+  clothes: {
+    name:'Clothes', icon:'👕',
+    words:[
+      {en:'Shirt',es:'Camisa',hint:'kah-MEE-sah',img:'👕',alt:['camisa','kamisa','ca misa','camisas']},
+      {en:'Pants',es:'Pantalón',hint:'pahn-tah-LOHN',img:'👖',alt:['pantalon','pantalón','pantalone','panta lon','pantalones']},
+      {en:'Shoes',es:'Zapatos',hint:'sah-PAH-tohs',img:'👟',alt:['zapatos','sapatos','zapato','za patos','zapa tos']},
+      {en:'Hat',es:'Sombrero',hint:'sohm-BREH-roh',img:'🎩',alt:['sombrero','sonbrero','som brero','sombreros']},
+      {en:'Dress',es:'Vestido',hint:'behs-TEE-doh',img:'👗',alt:['vestido','bestido','ves tido','vestidos']},
+      {en:'Socks',es:'Calcetines',hint:'kahl-seh-TEE-nehs',img:'🧦',alt:['calcetines','calcetín','calsetines','calcetine','cal cetines']},
+      {en:'Jacket',es:'Chaqueta',hint:'chah-KEH-tah',img:'🧥',alt:['chaqueta','chaketa','chaquéta','cha queta','chaquetas']},
+      {en:'Skirt',es:'Falda',hint:'FAHL-dah',img:'🩳',alt:['falda','faldah','fal da','faldas']},
+      {en:'Glasses',es:'Lentes',hint:'LEHN-tehs',img:'👓',alt:['lentes','lénte','lente','len tes','lente']},
+      {en:'Backpack',es:'Mochila',hint:'moh-CHEE-lah',img:'🎒',alt:['mochila','mochíla','mo chila','mochilas']},
+    ]
+  },
+  verbs: {
+    name:'Verbs', icon:'🏃',
+    words:[
+      {en:'To eat',es:'Comer',hint:'koh-MEHR',img:'🍽️',alt:['comer','comér','co mer','come','comers']},
+      {en:'To drink',es:'Beber',hint:'beh-BEHR',img:'🥤',alt:['beber','bever','be ber','bebe','bebes']},
+      {en:'To run',es:'Correr',hint:'koh-REHR',img:'🏃',alt:['correr','corer','co rrer','corre','corers']},
+      {en:'To walk',es:'Caminar',hint:'kah-mee-NAHR',img:'🚶',alt:['caminar','kaminar','ca minar','camina','caminare']},
+      {en:'To sleep',es:'Dormir',hint:'dohr-MEER',img:'😴',alt:['dormir','dormír','dor mir','dorme','dormire']},
+      {en:'To play',es:'Jugar',hint:'hoo-GAHR',img:'🎮',alt:['jugar','hugar','ju gar','juga','jugare','sugar']},
+      {en:'To read',es:'Leer',hint:'leh-EHR',img:'📖',alt:['leer','leér','le er','lee','lere','ler','leal']},
+      {en:'To write',es:'Escribir',hint:'ehs-kree-BEER',img:'✏️',alt:['escribir','escrivir','es cribir','escribí','eskribir']},
+      {en:'To sing',es:'Cantar',hint:'kahn-TAHR',img:'🎤',alt:['cantar','kantár','can tar','canta','cantare']},
+      {en:'To dance',es:'Bailar',hint:'bye-LAHR',img:'💃',alt:['bailar','baylar','bai lar','baila','bailare','vailar']},
+      {en:'To swim',es:'Nadar',hint:'nah-DAHR',img:'🏊',alt:['nadar','nadár','na dar','nada','nadare']},
+      {en:'To jump',es:'Saltar',hint:'sahl-TAHR',img:'🦘',alt:['saltar','saltár','sal tar','salta','saltare']},
+      {en:'To want',es:'Querer',hint:'keh-REHR',img:'💖',alt:['querer','kerer','que rer','quere','querere']},
+      {en:'To go',es:'Ir',hint:'eer',img:'➡️',alt:['ir','ír','i r','ire','hir','ir ','eer','ear','here','ere']},
+      {en:'To see',es:'Ver',hint:'behr',img:'👁️',alt:['ver','vér','ber','ver ','bare','bear','beer','vere','bere','verr']},
+      {en:'To give',es:'Dar',hint:'dahr',img:'🎁',alt:['dar','dár','da r','dare','dar ','dor','door','dara','par','tar']},
+      {en:'To speak',es:'Hablar',hint:'ah-BLAHR',img:'🗣️',alt:['hablar','ablár','ha blar','habla','hablare','ablar']},
+      {en:'To think',es:'Pensar',hint:'pehn-SAHR',img:'🤔',alt:['pensar','pensár','pen sar','pensa','pensare','pinsar']},
+      {en:'To love',es:'Amar',hint:'ah-MAHR',img:'❤️',alt:['amar','amár','a mar','ama','amare','amor']},
+      {en:'To help',es:'Ayudar',hint:'ah-yoo-DAHR',img:'🤝',alt:['ayudar','ayudár','a yudar','ayuda','ayudare','alludar']},
+    ]
+  }
+};
+
+const ROUND_SIZE = 8;
+const CHEERS = ['¡Perfecto!','¡Muy bien!','¡Excelente!','¡Genial!','¡Bravo!','¡Fantástico!','¡Increíble!'];
+const ENCOURAGEMENTS = ["Let's try that one again!","Almost! Keep going!","You're learning!","So close! Nice try!"];
+
+// ══════════════════════════════════════
+// STATE
+// ══════════════════════════════════════
+let currentProfile = null;
+let currentSkill = null;
+let roundWords = [];
+let roundIndex = 0;
+let roundCorrect = 0;
+let isListening = false;
+let recognition = null;
+let retryQueue = [];
+let resultReceived = false; // KEY: track if recognition captured anything
+
+// ══════════════════════════════════════
+// LOCALSTORAGE
+// ══════════════════════════════════════
+function getData(){try{return JSON.parse(localStorage.getItem('habla-data'))||{};}catch{return {};}}
+function saveData(d){localStorage.setItem('habla-data',JSON.stringify(d));}
+function getProfile(n){const d=getData();if(!d[n])d[n]={stars:0,streak:0,lastDate:null,skills:{}};saveData(d);return d[n];}
+function getSkillProgress(p,s){const pr=getProfile(p);return pr.skills[s]||{correct:0,total:0,mastered:[]};}
+function updateSkillProgress(p,s,data){const d=getData();const pr=d[p]||{stars:0,streak:0,lastDate:null,skills:{}};pr.skills[s]=data;d[p]=pr;saveData(d);}
+function updateStreak(p){const d=getData();const pr=d[p];const t=new Date().toDateString();if(pr.lastDate!==t){const y=new Date(Date.now()-86400000).toDateString();pr.streak=(pr.lastDate===y)?pr.streak+1:1;pr.lastDate=t;d[p]=pr;saveData(d);}}
+
+// ══════════════════════════════════════
+// SCREENS
+// ══════════════════════════════════════
+function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
+function refreshProfileScreen(){['Tessa','Audrey','Aiden'].forEach(n=>{const p=getProfile(n);document.getElementById('stars-'+n).textContent='⭐ '+p.stars+' star'+(p.stars!==1?'s':'');});}
+function selectProfile(n){
+  currentProfile=n;const p=getProfile(n);updateStreak(n);
+  document.getElementById('skill-greeting').textContent='¡Hola, '+n+'!';
+  document.getElementById('streak-display').textContent='🔥 '+p.streak;
+  document.getElementById('star-display').textContent='⭐ '+p.stars;
+  renderSkills();showScreen('skill-screen');
+}
+function renderSkills(){
+  const g=document.getElementById('skills-grid');g.innerHTML='';
+  Object.entries(SKILLS).forEach(([k,s])=>{
+    const sp=getSkillProgress(currentProfile,k);
+    const pct=s.words.length>0?Math.round((sp.mastered||[]).length/s.words.length*100):0;
+    const c=document.createElement('div');c.className='skill-card';c.onclick=()=>startPractice(k);
+    c.innerHTML='<div class="skill-icon">'+s.icon+'</div><div class="skill-name">'+s.name+'</div><div class="skill-progress-wrap"><div class="skill-progress-bar" style="width:'+pct+'%"></div></div>'+(pct===100?'<div class="skill-mastered">👑</div>':'');
+    g.appendChild(c);
+  });
+}
+
+// ══════════════════════════════════════
+// PRACTICE
+// ══════════════════════════════════════
+function startPractice(sk){
+  currentSkill=sk;retryQueue=[];
+  const s=SKILLS[sk];const sp=getSkillProgress(currentProfile,sk);
+  const mastered=new Set(sp.mastered||[]);
+  let pool=s.words.filter(w=>!mastered.has(w.es));
+  if(pool.length<ROUND_SIZE) pool=pool.concat(s.words.filter(w=>mastered.has(w.es)));
+  pool.sort(()=>Math.random()-0.5);
+  roundWords=pool.slice(0,ROUND_SIZE);roundIndex=0;roundCorrect=0;
+  document.getElementById('practice-card').style.display='';
+  document.getElementById('round-complete').style.display='none';
+  showPrompt();showScreen('practice-screen');
+}
+
+function showPrompt(){
+  const w=roundWords[roundIndex];const isColor=currentSkill==='colors';
+  const imgEl=document.getElementById('prompt-image');
+  if(isColor&&w.color){imgEl.innerHTML='<div class="color-swatch" style="background:'+w.color+';"></div>';}
+  else{imgEl.textContent=w.img||'';}
+  document.getElementById('prompt-english').textContent=w.en;
+  const spEl=document.getElementById('prompt-spanish');spEl.textContent=w.es;
+  if(isColor&&w.color){spEl.style.color=w.color;if(w.en==='White')spEl.style.color='#ecf0f1';if(w.en==='Yellow')spEl.style.color='#f4d03f';if(w.en==='Black')spEl.style.color='#95a5a6';}
+  else{spEl.style.color='var(--green)';}
+  document.getElementById('hint-text').textContent='Sounds like: '+w.hint;
+  document.getElementById('heard-text').textContent='';
+  document.getElementById('round-counter').textContent=(roundIndex+1)+' / '+roundWords.length;
+  document.getElementById('practice-progress').style.width=(roundIndex/roundWords.length*100)+'%';
+  const mic=document.getElementById('mic-btn');mic.classList.remove('listening');mic.innerHTML='🎤';
+  dbg('Prompt: '+w.en+' → '+w.es);
+}
+
+function skipWord(){
+  dbg('Skipped: '+roundWords[roundIndex].es);
+  const w=roundWords[roundIndex];
+  // Play correct pronunciation on skip
+  const text=w.es.replace(/[¿¡…]/g,'').trim();
+  playTTS(text);
+  if(!retryQueue.find(r=>r.es===w.es)) retryQueue.push(w);
+  showFeedback(false, "No worries! Listen and try again later.", 'It sounds like: '+w.es);
+}
+
+// ══════════════════════════════════════
+// SPEECH RECOGNITION — robust for kids
+// ══════════════════════════════════════
+function toggleListening(){
+  if(isListening){stopListening();return;}
+  ensureAudio();
+  if(currentAudio){currentAudio.pause();currentAudio=null;}
+  speechSynthesis.cancel();
+
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){alert('Please use Chrome or Edge for speech recognition!');return;}
+
+  recognition=new SR();
+  recognition.lang='es-419'; // Latin American Spanish
+  recognition.interimResults=false;
+  recognition.maxAlternatives=10;
+  recognition.continuous=false;
+
+  const mic=document.getElementById('mic-btn');
+  mic.classList.add('listening');mic.innerHTML='⏹';
+  isListening=true;
+  resultReceived=false;
+  document.getElementById('heard-text').textContent='🎤 Listening... speak now!';
+  dbg('Recognition started (es-419)');
+
+  recognition.onresult=(event)=>{
+    resultReceived=true;
+    const results=event.results[0];
+    let heard=[];
+    for(let i=0;i<results.length;i++){
+      heard.push(results[i].transcript.toLowerCase().trim());
+    }
+    dbg('Heard alternatives: '+JSON.stringify(heard));
+    stopListening();
+    checkAnswer(heard);
+  };
+
+  recognition.onerror=(e)=>{
+    dbg('Recognition error: '+e.error);
+    if(e.error==='no-speech'){
+      document.getElementById('heard-text').textContent="I didn't hear anything — speak louder and try again, or tap Skip →";
+    } else if(e.error==='network'){
+      document.getElementById('heard-text').textContent="Network error — use the start-habla launcher!";
+    } else if(e.error==='not-allowed'){
+      document.getElementById('heard-text').textContent="Mic blocked — click the 🔒 in the address bar to allow it";
+    } else {
+      document.getElementById('heard-text').textContent="Oops! Tap the mic to try again, or tap Skip →";
+    }
+    stopListening();
+  };
+
+  recognition.onend=()=>{
+    dbg('Recognition ended. resultReceived='+resultReceived);
+    if(!resultReceived && isListening){
+      // Recognition ended but captured NOTHING — this is the silent failure bug
+      document.getElementById('heard-text').textContent="I didn't catch that — try speaking louder, or tap Skip →";
+      dbg('No result captured — showed retry message');
+    }
+    stopListening();
+  };
+
+  try{recognition.start();}catch(e){
+    dbg('Could not start recognition: '+e.message);
+    document.getElementById('heard-text').textContent='Could not start mic — try refreshing the page';
+    stopListening();
+  }
+}
+
+function stopListening(){
+  isListening=false;
+  const mic=document.getElementById('mic-btn');
+  mic.classList.remove('listening');mic.innerHTML='🎤';
+  if(recognition){try{recognition.stop();}catch{}}
+}
+
+// ══════════════════════════════════════
+// MATCHING — very forgiving for kids
+// ══════════════════════════════════════
+function normalize(s){
+  return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[¿?¡!.,…]/g,'').replace(/\s+/g,' ').trim();
+}
+function levenshtein(a,b){
+  const m=a.length,n=b.length;
+  const dp=Array.from({length:m+1},()=>Array(n+1).fill(0));
+  for(let i=0;i<=m;i++)dp[i][0]=i;
+  for(let j=0;j<=n;j++)dp[0][j]=j;
+  for(let i=1;i<=m;i++)for(let j=1;j<=n;j++)
+    dp[i][j]=Math.min(dp[i-1][j]+1,dp[i][j-1]+1,dp[i-1][j-1]+(a[i-1]!==b[j-1]?1:0));
+  return dp[m][n];
+}
+
+function checkAnswer(heardOptions){
+  const w=roundWords[roundIndex];
+  const expected=normalize(w.es);
+  // Build all acceptable forms
+  const acceptable=[expected];
+  if(w.alt) w.alt.forEach(a=>acceptable.push(normalize(a)));
+
+  let matched=false;
+  for(const h of heardOptions){
+    const norm=normalize(h);
+    // Split heard into individual words too (recognizer may add filler words)
+    const heardWords=norm.split(' ');
+
+    for(const acc of acceptable){
+      // Exact match
+      if(norm===acc){matched=true;break;}
+      // Contains match (recognizer may wrap word in a phrase)
+      if(norm.includes(acc)||acc.includes(norm)){matched=true;break;}
+      // Any single heard word matches?
+      if(heardWords.some(hw=>hw===acc)){matched=true;break;}
+
+      // Generous Levenshtein — extra forgiving for short words
+      const maxDist=acc.length<=2?2:acc.length<=4?3:acc.length<=7?3:4;
+      if(levenshtein(norm,acc)<=maxDist){matched=true;break;}
+      // Also check each heard word individually against short acceptables
+      if(acc.length<=5 && heardWords.some(hw=>levenshtein(hw,acc)<=2)){matched=true;break;}
+
+      // Word-level match for phrases
+      if(acc.includes(' ')){
+        const ew=acc.split(' '), hw2=norm.split(' ');
+        const hits=ew.filter(e=>hw2.some(h2=>levenshtein(h2,e)<=1)).length;
+        if(hits>=Math.ceil(ew.length*0.6)){matched=true;break;}
+      }
+    }
+    if(matched)break;
+    // Does any heard word START with the first 2 chars of expected? (catches "pez"→"peso", "pan"→"pando" etc.)
+    if(expected.length>=2){
+      const prefix=expected.substring(0,2);
+      if(heardWords.some(hw=>hw.startsWith(prefix) && hw.length<=expected.length+3)){matched=true;break;}
+    }
+  }
+
+  const displayHeard=heardOptions[0]||'(nothing)';
+  document.getElementById('heard-text').textContent='You said: "'+displayHeard+'"';
+  dbg('Match result: '+matched+' | Expected: '+expected+' | Heard: '+heardOptions.join(', '));
+
+  if(matched){handleCorrect(w);}else{handleIncorrect(w);}
+}
+
+function handleCorrect(w){
+  roundCorrect++;playSuccess();spawnConfetti();
+  const sp=getSkillProgress(currentProfile,currentSkill);
+  if(!sp.mastered)sp.mastered=[];
+  if(!sp.mastered.includes(w.es))sp.mastered.push(w.es);
+  sp.correct=(sp.correct||0)+1;sp.total=(sp.total||0)+1;
+  updateSkillProgress(currentProfile,currentSkill,sp);
+  showFeedback(true,CHEERS[Math.floor(Math.random()*CHEERS.length)]);
+}
+
+function handleIncorrect(w){
+  playGentleWhoops();
+  const sp=getSkillProgress(currentProfile,currentSkill);
+  sp.total=(sp.total||0)+1;
+  if(sp.mastered)sp.mastered=sp.mastered.filter(x=>x!==w.es);
+  updateSkillProgress(currentProfile,currentSkill,sp);
+  if(!retryQueue.find(r=>r.es===w.es))retryQueue.push(w);
+  // Play correct pronunciation so they hear it
+  const text=w.es.replace(/[¿¡…]/g,'').trim();
+  setTimeout(()=>playTTS(text),500);
+  showFeedback(false,ENCOURAGEMENTS[Math.floor(Math.random()*ENCOURAGEMENTS.length)],'It sounds like: '+w.es);
+}
+
+function showFeedback(success,text,sub){
+  const overlay=document.getElementById('feedback-overlay');
+  document.getElementById('feedback-icon').textContent=success?'✅':'💭';
+  document.getElementById('feedback-text').textContent=text;
+  document.getElementById('feedback-sub').textContent=sub||'';
+  document.getElementById('feedback-box').className='feedback-box '+(success?'success':'miss');
+  overlay.classList.add('active');
+  setTimeout(()=>{overlay.classList.remove('active');advanceRound();},success?1300:3000);
+}
+
+function advanceRound(){
+  roundIndex++;
+  if(roundIndex>=roundWords.length){
+    if(retryQueue.length>0){roundWords=roundWords.concat(retryQueue);retryQueue=[];showPrompt();}
+    else{finishRound();}
+  }else{showPrompt();}
+}
+
+function finishRound(){
+  playRoundComplete();spawnConfetti();
+  let stars=0;
+  if(roundCorrect>=ROUND_SIZE)stars=3;
+  else if(roundCorrect>=ROUND_SIZE*0.75)stars=2;
+  else if(roundCorrect>=ROUND_SIZE*0.5)stars=1;
+  const d=getData();d[currentProfile].stars=(d[currentProfile].stars||0)+stars;saveData(d);
+  document.getElementById('complete-title').textContent=['Keep practicing!','Nice work!','Great job!','¡Perfecto! 💯'][stars];
+  document.getElementById('complete-stats').textContent='You got '+roundCorrect+' out of '+roundWords.length+' right!';
+  document.getElementById('complete-stars').textContent='⭐'.repeat(stars)+'☆'.repeat(3-stars)+(stars>0?' +'+stars+' stars!':'');
+  document.getElementById('practice-card').style.display='none';
+  document.getElementById('round-complete').style.display='';
+  document.getElementById('practice-progress').style.width='100%';
+}
+
+function endPractice(){
+  stopListening();if(currentAudio){currentAudio.pause();currentAudio=null;}speechSynthesis.cancel();
+  const p=getProfile(currentProfile);
+  document.getElementById('streak-display').textContent='🔥 '+p.streak;
+  document.getElementById('star-display').textContent='⭐ '+p.stars;
+  renderSkills();showScreen('skill-screen');
+}
+
+// ══════════════════════════════════════
+// RECORDING STUDIO
+// ══════════════════════════════════════
+let studioSkill = null;
+let mediaRecorder = null;
+let recordingWord = null;
+let recordedKeys = new Set();
+
+async function openStudio() {
+  // Load which words already have recordings
+  const keys = await getAllClipKeys();
+  recordedKeys = new Set(keys);
+  studioSkill = Object.keys(SKILLS)[0];
+  renderStudio();
+  showScreen('studio-screen');
+  updateStudioProgress();
+}
+
+function closeStudio() {
+  if (mediaRecorder && mediaRecorder.state === 'recording') { mediaRecorder.stop(); }
+  showScreen('profile-screen');
+  refreshProfileScreen();
+}
+
+function updateStudioProgress() {
+  const total = Object.values(SKILLS).reduce((s,sk) => s + sk.words.length, 0);
+  const el = document.getElementById('studio-progress');
+  el.innerHTML = 'Recorded: <span>' + recordedKeys.size + '</span> / ' + total + ' words';
+}
+
+function renderStudio() {
+  // Tabs
+  const tabsEl = document.getElementById('studio-tabs');
+  tabsEl.innerHTML = '';
+  Object.entries(SKILLS).forEach(([key, skill]) => {
+    const recorded = skill.words.filter(w => recordedKeys.has(w.es.replace(/[¿¡…]/g,'').trim())).length;
+    const tab = document.createElement('button');
+    tab.className = 'studio-tab' + (key === studioSkill ? ' active' : '');
+    tab.innerHTML = skill.icon + ' ' + skill.name + (recorded === skill.words.length ? ' <span class="tab-check">✓</span>' : ' <span style="opacity:0.5">' + recorded + '/' + skill.words.length + '</span>');
+    tab.onclick = () => { studioSkill = key; renderStudio(); };
+    tabsEl.appendChild(tab);
+  });
+
+  // Word list
+  const listEl = document.getElementById('word-list');
+  listEl.innerHTML = '';
+  const skill = SKILLS[studioSkill];
+  skill.words.forEach(w => {
+    const cleanWord = w.es.replace(/[¿¡…]/g,'').trim();
+    const hasRec = recordedKeys.has(cleanWord);
+    const row = document.createElement('div');
+    row.className = 'word-row' + (hasRec ? ' recorded' : '');
+    row.id = 'row-' + cleanWord.replace(/\s+/g,'-');
+
+    row.innerHTML = `
+      <div class="word-img">${w.img || ''}</div>
+      <div class="word-info">
+        <div class="word-es">${w.es}</div>
+        <div class="word-en">${w.en}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+        <button class="play-btn ${hasRec?'':'hidden'}" id="play-${cleanWord.replace(/\s+/g,'-')}" onclick="playRecording('${cleanWord.replace(/'/g,"\\'")}')">▶</button>
+        <div class="rec-status ${hasRec?'done':''}" id="status-${cleanWord.replace(/\s+/g,'-')}">${hasRec?'✓ Saved':''}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+        <button class="rec-btn ${hasRec?'has-recording':''}" id="rec-${cleanWord.replace(/\s+/g,'-')}" onclick="toggleRecord('${cleanWord.replace(/'/g,"\\'")}')">🎤</button>
+      </div>
+    `;
+    listEl.appendChild(row);
+  });
+}
+
+async function toggleRecord(word) {
+  const safeId = word.replace(/\s+/g,'-');
+  const btn = document.getElementById('rec-' + safeId);
+  const statusEl = document.getElementById('status-' + safeId);
+
+  // If already recording, stop
+  if (mediaRecorder && mediaRecorder.state === 'recording') {
+    mediaRecorder.stop();
+    return;
+  }
+
+  // Start recording
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const chunks = [];
+    mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+    recordingWord = word;
+
+    btn.classList.add('recording');
+    btn.textContent = '⏹';
+    statusEl.textContent = '🔴 Recording...';
+    statusEl.className = 'rec-status';
+    dbg('Recording started for: ' + word);
+
+    mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
+
+    mediaRecorder.onstop = async () => {
+      stream.getTracks().forEach(t => t.stop()); // release mic
+      const blob = new Blob(chunks, { type: 'audio/webm' });
+      dbg('Recording stopped for: ' + word + ' (' + (blob.size/1024).toFixed(1) + ' KB)');
+
+      await saveClip(word, blob);
+      recordedKeys.add(word);
+
+      btn.classList.remove('recording');
+      btn.classList.add('has-recording');
+      btn.textContent = '🎤';
+      statusEl.textContent = '✓ Saved';
+      statusEl.className = 'rec-status done';
+
+      // Show play button
+      const playBtn = document.getElementById('play-' + safeId);
+      if (playBtn) playBtn.classList.remove('hidden');
+
+      // Update row style
+      const row = document.getElementById('row-' + safeId);
+      if (row) row.classList.add('recorded');
+
+      updateStudioProgress();
+      renderStudioTabs(); // update tab counts
+    };
+
+    mediaRecorder.start();
+
+    // Auto-stop after 4 seconds
+    setTimeout(() => {
+      if (mediaRecorder && mediaRecorder.state === 'recording' && recordingWord === word) {
+        mediaRecorder.stop();
+      }
+    }, 4000);
+
+  } catch(e) {
+    dbg('Mic access failed: ' + e.message);
+    statusEl.textContent = 'Mic error!';
+    btn.classList.remove('recording');
+    btn.textContent = '🎤';
+  }
+}
+
+function renderStudioTabs() {
+  // Just update the tabs without re-rendering the whole list
+  const tabsEl = document.getElementById('studio-tabs');
+  const tabs = tabsEl.querySelectorAll('.studio-tab');
+  Object.entries(SKILLS).forEach(([key, skill], i) => {
+    const recorded = skill.words.filter(w => recordedKeys.has(w.es.replace(/[¿¡…]/g,'').trim())).length;
+    if (tabs[i]) {
+      tabs[i].innerHTML = skill.icon + ' ' + skill.name + (recorded === skill.words.length ? ' <span class="tab-check">✓</span>' : ' <span style="opacity:0.5">' + recorded + '/' + skill.words.length + '</span>');
+    }
+  });
+}
+
+async function playRecording(word) {
+  const clip = await getClip(word);
+  if (!clip) { dbg('No recording found for: '+word); return; }
+  if (currentAudio) { currentAudio.pause(); }
+  const audio = new Audio(URL.createObjectURL(clip));
+  currentAudio = audio;
+  audio.onended = () => { currentAudio = null; };
+  audio.play().catch(e => dbg('Playback error: '+e.message));
+}
+
+// Init
+refreshProfileScreen();
+dbg('¡Habla! initialized. Press ? to toggle this debug log.');
+</script>
+</body>
+</html>
