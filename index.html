@@ -204,6 +204,8 @@
       <div class="studio-title">🎙️ Recording Studio</div>
       <div class="studio-progress" id="studio-progress">Recorded: <span>0</span> / 80 words</div>
     </div>
+    <button id="push-github-btn" onclick="pushRecordingsToGitHub()" style="background:#2ea44f;color:#fff;border:none;border-radius:10px;padding:8px 18px;font-size:0.95em;font-weight:700;cursor:pointer;margin-left:8px;">🚀 Push to GitHub</button>
+    <span id="push-status" style="font-size:0.85em;margin-left:8px;"></span>
   </div>
   <div class="studio-tabs" id="studio-tabs"></div>
   <div class="word-list" id="word-list"></div>
@@ -982,6 +984,127 @@ function closeStudio() {
   if (mediaRecorder && mediaRecorder.state === 'recording') { mediaRecorder.stop(); }
   showScreen('profile-screen');
   refreshProfileScreen();
+}
+
+// ══════════════════════════════════════
+// PUSH RECORDINGS TO GITHUB
+// ══════════════════════════════════════
+const GH_REPO = 'ghrh2025/habla';
+const GH_TOKEN_KEY = 'habla_gh_token';
+
+function getGHToken() {
+  let token = localStorage.getItem(GH_TOKEN_KEY);
+  if (!token) {
+    token = prompt('Paste your GitHub personal access token (fine-grained, with Contents read/write on ghrh2025/habla):');
+    if (token) localStorage.setItem(GH_TOKEN_KEY, token.trim());
+  }
+  return token ? token.trim() : null;
+}
+
+async function pushRecordingsToGitHub() {
+  const statusEl = document.getElementById('push-status');
+  const btn = document.getElementById('push-github-btn');
+  btn.disabled = true;
+  statusEl.textContent = 'Exporting recordings...';
+  statusEl.style.color = '#888';
+
+  try {
+    // Step 1: Export all recordings from IndexedDB as base64 data URLs
+    const db = await new Promise((res, rej) => {
+      const req = indexedDB.open('habla-recordings', 1);
+      req.onsuccess = () => res(req.result);
+      req.onerror = () => rej(req.error);
+    });
+    const tx = db.transaction('clips', 'readonly');
+    const store = tx.objectStore('clips');
+    const allKeys = await new Promise((res, rej) => {
+      const req = store.getAllKeys();
+      req.onsuccess = () => res(req.result);
+      req.onerror = () => rej(req.error);
+    });
+
+    if (allKeys.length === 0) {
+      statusEl.textContent = 'No recordings to push!';
+      statusEl.style.color = '#e74c3c';
+      btn.disabled = false;
+      return;
+    }
+
+    statusEl.textContent = 'Reading ' + allKeys.length + ' clips...';
+    const recordings = {};
+    for (const key of allKeys) {
+      const blob = await new Promise((res, rej) => {
+        const req = store.get(key);
+        req.onsuccess = () => res(req.result);
+        req.onerror = () => rej(req.error);
+      });
+      // Convert blob to base64 data URL
+      const dataUrl = await new Promise((res) => {
+        const reader = new FileReader();
+        reader.onloadend = () => res(reader.result);
+        reader.readAsDataURL(blob);
+      });
+      recordings[key] = dataUrl;
+    }
+
+    statusEl.textContent = 'Pushing ' + allKeys.length + ' clips to GitHub...';
+
+    // Step 2: Get token
+    const token = getGHToken();
+    if (!token) {
+      statusEl.textContent = 'Cancelled — no token provided.';
+      statusEl.style.color = '#e74c3c';
+      btn.disabled = false;
+      return;
+    }
+
+    // Step 3: Get current SHA of recordings.json (if it exists)
+    let sha = null;
+    try {
+      const metaResp = await fetch('https://api.github.com/repos/' + GH_REPO + '/contents/recordings.json', {
+        headers: { 'Authorization': 'token ' + token }
+      });
+      if (metaResp.ok) {
+        const meta = await metaResp.json();
+        sha = meta.sha;
+      }
+    } catch (e) { /* file doesn't exist yet, that's fine */ }
+
+    // Step 4: Push
+    const jsonStr = JSON.stringify(recordings);
+    const encoded = btoa(unescape(encodeURIComponent(jsonStr)));
+    const body = {
+      message: 'Update recordings (' + allKeys.length + ' clips)',
+      content: encoded
+    };
+    if (sha) body.sha = sha;
+
+    const pushResp = await fetch('https://api.github.com/repos/' + GH_REPO + '/contents/recordings.json', {
+      method: 'PUT',
+      headers: {
+        'Authorization': 'token ' + token,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(body)
+    });
+
+    if (pushResp.ok) {
+      statusEl.textContent = '✅ Pushed ' + allKeys.length + ' recordings!';
+      statusEl.style.color = '#2ecc71';
+    } else {
+      const err = await pushResp.json();
+      statusEl.textContent = '❌ ' + (err.message || 'Push failed');
+      statusEl.style.color = '#e74c3c';
+      // Clear bad token so they can re-enter
+      if (pushResp.status === 401 || pushResp.status === 403) {
+        localStorage.removeItem(GH_TOKEN_KEY);
+      }
+    }
+  } catch (e) {
+    statusEl.textContent = '❌ Error: ' + e.message;
+    statusEl.style.color = '#e74c3c';
+  }
+  btn.disabled = false;
 }
 
 function updateStudioProgress() {
