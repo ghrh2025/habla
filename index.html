@@ -1033,18 +1033,30 @@ async function pushRecordingsToGitHub() {
     statusEl.textContent = 'Reading ' + allKeys.length + ' clips...';
     const recordings = {};
     for (const key of allKeys) {
-      const blob = await new Promise((res, rej) => {
+      const val = await new Promise((res, rej) => {
         const req = store.get(key);
         req.onsuccess = () => res(req.result);
         req.onerror = () => rej(req.error);
       });
-      // Convert blob to base64 data URL
-      const dataUrl = await new Promise((res) => {
-        const reader = new FileReader();
-        reader.onloadend = () => res(reader.result);
-        reader.readAsDataURL(blob);
-      });
-      recordings[key] = dataUrl;
+      // Handle all possible storage formats: string (data URL), Blob, or ArrayBuffer
+      if (typeof val === 'string') {
+        recordings[key] = val; // already a data URL
+      } else if (val instanceof Blob) {
+        recordings[key] = await new Promise((res) => {
+          const reader = new FileReader();
+          reader.onloadend = () => res(reader.result);
+          reader.readAsDataURL(val);
+        });
+      } else if (val instanceof ArrayBuffer || (val && val.buffer instanceof ArrayBuffer)) {
+        const blob = new Blob([val], {type:'audio/webm'});
+        recordings[key] = await new Promise((res) => {
+          const reader = new FileReader();
+          reader.onloadend = () => res(reader.result);
+          reader.readAsDataURL(blob);
+        });
+      } else {
+        console.warn('Unknown clip format for', key, typeof val);
+      }
     }
 
     statusEl.textContent = 'Pushing ' + allKeys.length + ' clips to GitHub...';
