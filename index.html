@@ -995,7 +995,7 @@ const GH_TOKEN_KEY = 'habla_gh_token';
 function getGHToken() {
   let token = localStorage.getItem(GH_TOKEN_KEY);
   if (!token) {
-    token = prompt('Paste your GitHub personal access token (fine-grained, with Contents read/write on ghrh2025/habla):');
+    token = prompt('Paste your GitHub token (one-time only — it will be saved):');
     if (token) localStorage.setItem(GH_TOKEN_KEY, token.trim());
   }
   return token ? token.trim() : null;
@@ -1031,32 +1031,36 @@ async function pushRecordingsToGitHub() {
     }
 
     statusEl.textContent = 'Reading ' + allKeys.length + ' clips...';
-    const recordings = {};
+    const recordings = []; // Array of {word, audio} to match expected format
     for (const key of allKeys) {
-      const val = await new Promise((res, rej) => {
+      const record = await new Promise((res, rej) => {
         const req = store.get(key);
         req.onsuccess = () => res(req.result);
         req.onerror = () => rej(req.error);
       });
-      // Handle all possible storage formats: string (data URL), Blob, or ArrayBuffer
+      // record is {word, audio, ts} — audio can be Blob, string (dataURL), or ArrayBuffer
+      const val = record ? record.audio : record;
+      let dataUrl = null;
       if (typeof val === 'string') {
-        recordings[key] = val; // already a data URL
+        dataUrl = val; // already a data URL
       } else if (val instanceof Blob) {
-        recordings[key] = await new Promise((res) => {
+        dataUrl = await new Promise((res) => {
           const reader = new FileReader();
           reader.onloadend = () => res(reader.result);
           reader.readAsDataURL(val);
         });
       } else if (val instanceof ArrayBuffer || (val && val.buffer instanceof ArrayBuffer)) {
         const blob = new Blob([val], {type:'audio/webm'});
-        recordings[key] = await new Promise((res) => {
+        dataUrl = await new Promise((res) => {
           const reader = new FileReader();
           reader.onloadend = () => res(reader.result);
           reader.readAsDataURL(blob);
         });
       } else {
         console.warn('Unknown clip format for', key, typeof val);
+        continue;
       }
+      if (dataUrl) recordings.push({word: key, audio: dataUrl});
     }
 
     statusEl.textContent = 'Pushing ' + allKeys.length + ' clips to GitHub...';
@@ -1086,7 +1090,7 @@ async function pushRecordingsToGitHub() {
     const jsonStr = JSON.stringify(recordings);
     const encoded = btoa(unescape(encodeURIComponent(jsonStr)));
     const body = {
-      message: 'Update recordings (' + allKeys.length + ' clips)',
+      message: 'Update recordings (' + recordings.length + ' clips)',
       content: encoded
     };
     if (sha) body.sha = sha;
@@ -1101,15 +1105,15 @@ async function pushRecordingsToGitHub() {
     });
 
     if (pushResp.ok) {
-      statusEl.textContent = '✅ Pushed ' + allKeys.length + ' recordings!';
+      statusEl.textContent = '✅ Pushed ' + recordings.length + ' recordings!';
       statusEl.style.color = '#2ecc71';
     } else {
       const err = await pushResp.json();
       statusEl.textContent = '❌ ' + (err.message || 'Push failed');
       statusEl.style.color = '#e74c3c';
-      // Clear bad token so they can re-enter
       if (pushResp.status === 401 || pushResp.status === 403) {
         localStorage.removeItem(GH_TOKEN_KEY);
+        statusEl.textContent += ' (token cleared — try again)';
       }
     }
   } catch (e) {
