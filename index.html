@@ -1186,8 +1186,10 @@ async function pushRecordingsToGitHub() {
       return;
     }
 
-    // Step 3: Get current SHA of recordings.json (if it exists)
+    // Step 3: Fetch existing recordings from GitHub and MERGE (never overwrite)
+    statusEl.textContent = 'Fetching existing recordings from GitHub...';
     let sha = null;
+    let existingMap = {}; // word -> {word, audio}
     try {
       const metaResp = await fetch('https://api.github.com/repos/' + GH_REPO + '/contents/recordings.json', {
         headers: { 'Authorization': 'token ' + token }
@@ -1195,14 +1197,32 @@ async function pushRecordingsToGitHub() {
       if (metaResp.ok) {
         const meta = await metaResp.json();
         sha = meta.sha;
+        // Fetch the actual file content
+        const rawResp = await fetch('https://api.github.com/repos/' + GH_REPO + '/contents/recordings.json', {
+          headers: { 'Authorization': 'token ' + token, 'Accept': 'application/vnd.github.v3.raw' }
+        });
+        if (rawResp.ok) {
+          const existing = await rawResp.json();
+          if (Array.isArray(existing)) {
+            existing.forEach(r => { existingMap[r.word] = r; });
+          }
+          dbg('Fetched ' + Object.keys(existingMap).length + ' existing recordings from GitHub');
+        }
       }
-    } catch (e) { /* file doesn't exist yet, that's fine */ }
+    } catch (e) { dbg('Could not fetch existing recordings: ' + e.message); }
 
-    // Step 4: Push
-    const jsonStr = JSON.stringify(recordings);
+    // Step 4: Merge — local recordings overwrite existing (newer wins), but keep all others
+    statusEl.textContent = 'Merging ' + recordings.length + ' local + ' + Object.keys(existingMap).length + ' remote...';
+    recordings.forEach(r => { existingMap[r.word] = r; }); // local overwrites
+    const merged = Object.values(existingMap).sort((a,b) => a.word.localeCompare(b.word));
+    dbg('Merged total: ' + merged.length + ' recordings');
+
+    // Step 5: Push merged result
+    statusEl.textContent = 'Pushing ' + merged.length + ' recordings to GitHub...';
+    const jsonStr = JSON.stringify(merged);
     const encoded = btoa(unescape(encodeURIComponent(jsonStr)));
     const body = {
-      message: 'Update recordings (' + recordings.length + ' clips)',
+      message: 'Update recordings (' + merged.length + ' clips, merged)',
       content: encoded
     };
     if (sha) body.sha = sha;
@@ -1217,7 +1237,7 @@ async function pushRecordingsToGitHub() {
     });
 
     if (pushResp.ok) {
-      statusEl.textContent = '✅ Pushed ' + recordings.length + ' recordings!';
+      statusEl.textContent = '✅ Pushed ' + merged.length + ' recordings (' + recordings.length + ' local + ' + (merged.length - recordings.length) + ' kept from GitHub)!';
       statusEl.style.color = '#2ecc71';
     } else {
       const err = await pushResp.json();
