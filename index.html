@@ -331,10 +331,7 @@ async function getClip(word) {
   // 2. Try bundled recordings (from recordings.json)
   if (bundledRecordings[word]) {
     dbg('Using bundled recording for: '+word);
-    // Convert dataURL to Blob for playback
-    const dataUrl = bundledRecordings[word];
-    const resp = await fetch(dataUrl);
-    return await resp.blob();
+    return bundledRecordings[word]; // return dataURL string directly (Safari blocks fetch on data URLs)
   }
   return null;
 }
@@ -456,7 +453,9 @@ async function playTTS(text, onEnd) {
     const clip = await getClip(text);
     if (clip) {
       dbg('Playing user recording for: '+text);
-      const audio = new Audio(URL.createObjectURL(clip));
+      // clip can be a Blob (from IndexedDB) or a dataURL string (from bundled recordings)
+      const src = (typeof clip === 'string') ? clip : URL.createObjectURL(clip);
+      const audio = new Audio(src);
       currentAudio = audio;
       audio.onended = () => { dbg('User recording played OK'); settle(); };
       audio.onerror = () => { dbg('User recording failed, falling through'); playTTSGoogle(text, settle); };
@@ -1256,7 +1255,8 @@ async function playRecording(word) {
   const clip = await getClip(word);
   if (!clip) { dbg('No recording found for: '+word); return; }
   if (currentAudio) { currentAudio.pause(); }
-  const audio = new Audio(URL.createObjectURL(clip));
+  const src = (typeof clip === 'string') ? clip : URL.createObjectURL(clip);
+  const audio = new Audio(src);
   currentAudio = audio;
   audio.onended = () => { currentAudio = null; };
   audio.play().catch(e => dbg('Playback error: '+e.message));
