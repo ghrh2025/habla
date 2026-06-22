@@ -503,6 +503,113 @@ function fallbackSpeak(text, onDone) {
 // speech recognition transcriptions
 // ══════════════════════════════════════
 const SKILLS = {
+  shapes: {
+    name:'Shapes', icon:'🔷',
+    words:[
+      {en:'Circle',es:'Círculo',hint:'SEER-koo-loh',img:'⭕',alt:['circulo','círculo','sirkulo','sir culo','seerkuloh','sircolo','cirkulo','circuloh']},
+      {en:'Square',es:'Cuadrado',hint:'kwah-DRAH-doh',img:'🟦',alt:['cuadrado','quadrado','cua drado','kwadrado','cuadradoh','cuadrahdo','quadrahdo','cuadrato']},
+      {en:'Triangle',es:'Triángulo',hint:'tree-AHN-goo-loh',img:'🔺',alt:['triangulo','triángulo','tri angulo','treeangoolo','trianguloh','triahngulo','triangolo']},
+      {en:'Star',es:'Estrella',hint:'ehs-TREH-yah',img:'⭐',alt:['estrella','estreya','es treya','estrelya','estrellah','estreja','estrayah','estreia']},
+      {en:'Heart',es:'Corazón',hint:'koh-rah-SOHN',img:'❤️',alt:['corazon','corazón','cora zon','korahzon','corazone','corasone','corazohn','korazon']},
+      {en:'Rectangle',es:'Rectángulo',hint:'rehk-TAHN-goo-loh',img:'🟩',alt:['rectangulo','rectángulo','rec tangulo','rektangulo','rectanguloh','rectangolo','rectahngoolo']},
+      {en:'Diamond',es:'Diamante',hint:'dee-ah-MAHN-teh',img:'💎',alt:['diamante','diamanteh','dia mante','deeahmanteh','diamonte','diamahnte','diamanti']},
+      {en:'Oval',es:'Óvalo',hint:'OH-bah-loh',img:'🥚',alt:['ovalo','óvalo','o valo','ohvalo','ovaloh','ohbaloh','obalo','oval','ovallo']},
+      {en:'Line',es:'Línea',hint:'LEE-neh-ah',img:'📏',alt:['linea','línea','li nea','leenea','lineah','leeneah','linya','lineh']},
+      {en:'Dot',es:'Punto',hint:'POON-toh',img:'⚫',alt:['punto','puntoh','pun to','poonto','puntto','poontoh','pundo','puntt']},
+    ]
+  },
+  feelings: {
+    name:'Feelings', icon:'😊',
+    words:[
+      {en:'Happy',es:'Feliz',hint:'feh-LEES',img:'😊',alt:['feliz','felís','fe lis','fehlees','felizz','felees','felis','felice','feliiz']},
+      {en:'Sad',es:'Triste',hint:'TREES-teh',img:'😢',alt:['triste','tristeh','tris te','treesteh','tristi','tristay','treste','tristee']},
+      {en:'Angry',es:'Enojado',hint:'eh-noh-HAH-doh',img:'😠',alt:['enojado','enohado','eno jado','enohadoh','enojadoh','enohahdo','enojahdo','inojado']},
+      {en:'Tired',es:'Cansado',hint:'kahn-SAH-doh',img:'😴',alt:['cansado','kansado','can sado','kahnsadoh','cansadoh','cansahdo','konsado','cansato']},
+      {en:'Scared',es:'Asustado',hint:'ah-soos-TAH-doh',img:'😨',alt:['asustado','asustadoh','asus tado','ahsoostado','asustahdo','asustato','asustahdoh']},
+      {en:'Hungry',es:'Hambriento',hint:'ahm-bree-EHN-toh',img:'🍽️',alt:['hambriento','ambriento','ham briento','ahmbreeentoh','hambrientoh','ambreeento','hambrento']},
+      {en:'Sick',es:'Enfermo',hint:'ehn-FEHR-moh',img:'🤒',alt:['enfermo','enfermoh','en fermo','ehnfehrmoh','enfairmo','enfermmo','infermo','enfehrmoh']},
+      {en:'Brave',es:'Valiente',hint:'bah-lee-EHN-teh',img:'🦁',alt:['valiente','baliente','va liente','vahleenteh','valienteh','baleenteh','valyente','valienti']},
+      {en:'Shy',es:'Tímido',hint:'TEE-mee-doh',img:'🫣',alt:['timido','tímido','ti mido','teemeedoh','timidoh','teemido','timmido','teemeedoh']},
+      {en:'Excited',es:'Emocionado',hint:'eh-moh-see-oh-NAH-doh',img:'🤩',alt:['emocionado','emosionado','emo cionado','emocionadoh','emohsionadoh','emocionahdo','emosionahdo']},
+    ]
+  },
+  weather: {
+    name:'Weather', icon:'🌤️',
+    words:[
+      {en:'Sun',es:'Sol',hint:'sohl',img:'☀️',alt:['sol','sól','so l','sole','soll','soul','sol','zol','sohl','soal','sool']},
+      {en:'Rain',es:'Lluvia',hint:'YOO-bee-ah',img:'🌧️',alt:['lluvia','yuvia','lu via','yoobeeah','lluviá','luvía','lobia','yuvya','llubia']},
+      {en:'Snow',es:'Nieve',hint:'nee-EH-beh',img:'❄️',alt:['nieve','niebe','ni eve','neeehbeh','nieveh','nyeve','nievi','neeve']},
+      {en:'Cloud',es:'Nube',hint:'NOO-beh',img:'☁️',alt:['nube','nubeh','nu be','noobeh','nuve','nubay','nubi','nubeh','noobe']},
+      {en:'Wind',es:'Viento',hint:'bee-EHN-toh',img:'💨',alt:['viento','biento','vi ento','beeentoh','vientoh','byento','vientto','viento']},
+      {en:'Hot',es:'Calor',hint:'kah-LOHR',img:'🥵',alt:['calor','kalor','ca lor','kahlor','calór','cahlor','kaloir','calore']},
+      {en:'Cold',es:'Frío',hint:'FREE-oh',img:'🥶',alt:['frio','frío','fri o','freeoh','frioh','freeo','freo','frioh','frio']},
+      {en:'Storm',es:'Tormenta',hint:'tohr-MEHN-tah',img:'⛈️',alt:['tormenta','tormentah','tor menta','tohrmentah','tormehntah','tormennta','torminta']},
+      {en:'Rainbow',es:'Arcoíris',hint:'ahr-koh-EE-rees',img:'🌈',alt:['arcoiris','arcoíris','arco iris','ahrkoeerees','arcoirís','arco iris','arkoiris']},
+      {en:'Moon',es:'Luna',hint:'LOO-nah',img:'🌙',alt:['luna','lunah','lu na','loonah','lunna','loona','lunah','luno','luna']},
+    ]
+  },
+  house: {
+    name:'Around the House', icon:'🏠',
+    words:[
+      {en:'Table',es:'Mesa',hint:'MEH-sah',img:'🪑',alt:['mesa','mesah','me sa','mehsah','messa','maysa','meza','mehza','mesa']},
+      {en:'Chair',es:'Silla',hint:'SEE-yah',img:'💺',alt:['silla','siya','si ya','seeyah','sillah','seeyah','sija','cilla','siyah']},
+      {en:'Bed',es:'Cama',hint:'KAH-mah',img:'🛏️',alt:['cama','kamah','ca ma','kahmah','camma','cahma','kama','camah','comma']},
+      {en:'Door',es:'Puerta',hint:'PWEHR-tah',img:'🚪',alt:['puerta','puertah','pu erta','pwehrtah','puairta','puehrtah','pwerta','puirta']},
+      {en:'Window',es:'Ventana',hint:'behn-TAH-nah',img:'🪟',alt:['ventana','bentana','ven tana','behntahnah','ventanah','bentahnah','ventanna','vintana']},
+      {en:'Kitchen',es:'Cocina',hint:'koh-SEE-nah',img:'🍳',alt:['cocina','kosina','co cina','kohseenah','cocinah','koseenah','cosina','cocinna']},
+      {en:'Bathroom',es:'Baño',hint:'BAH-nyoh',img:'🚿',alt:['baño','banyo','ba nyo','bahnyoh','bannyo','bano','banyoh','bahno','banio']},
+      {en:'Floor',es:'Piso',hint:'PEE-soh',img:'🟫',alt:['piso','pisoh','pi so','peesoh','pizo','peeso','pesso','pizzo','pisso']},
+      {en:'Roof',es:'Techo',hint:'TEH-choh',img:'🏠',alt:['techo','techoh','te cho','tehchoh','tetcho','techho','tetchoh','techoo']},
+      {en:'Stairs',es:'Escalera',hint:'ehs-kah-LEH-rah',img:'🪜',alt:['escalera','escalerah','esca lera','ehskahlehrah','escalehra','eskalera','escallera']},
+    ]
+  },
+  nature: {
+    name:'Nature', icon:'🌿',
+    words:[
+      {en:'Tree',es:'Árbol',hint:'AHR-bohl',img:'🌳',alt:['arbol','árbol','ar bol','ahrbohl','arbolh','ahrbole','arble','arbal']},
+      {en:'Flower',es:'Flor',hint:'flohr',img:'🌸',alt:['flor','flór','flo r','flohr','florr','floor','flore','floir','flor','flur','flour']},
+      {en:'River',es:'Río',hint:'RREE-oh',img:'🏞️',alt:['rio','río','ri o','rreeoh','rioh','reeo','reo','rioh','rio','rrio']},
+      {en:'Mountain',es:'Montaña',hint:'mohn-TAH-nyah',img:'⛰️',alt:['montaña','montana','mon taña','mohntahnyah','montanah','montanya','montahnya','montanna']},
+      {en:'Beach',es:'Playa',hint:'PLAH-yah',img:'🏖️',alt:['playa','playah','pla ya','plahyah','plaia','plahya','pllaiya','playya']},
+      {en:'Forest',es:'Bosque',hint:'BOHS-keh',img:'🌲',alt:['bosque','boskeh','bos que','bohskeh','boskey','boskay','bosqe','bossque']},
+      {en:'Lake',es:'Lago',hint:'LAH-goh',img:'🏞️',alt:['lago','lagoh','la go','lahgoh','laggo','lahgo','lagoh','laago','logo']},
+      {en:'Ocean',es:'Mar',hint:'mahr',img:'🌊',alt:['mar','már','ma r','mahr','marr','more','mare','mahr','mar','maer','mahr','moor','mars']},
+      {en:'Grass',es:'Hierba',hint:'ee-EHR-bah',img:'🌿',alt:['hierba','yerba','hi erba','eehrbah','hierbah','yerbah','yerva','hierva','iehrba']},
+      {en:'Rock',es:'Piedra',hint:'pee-EH-drah',img:'🪨',alt:['piedra','piedrah','pi edra','peeahdrah','pyedra','piedrra','piedhra','pihdra']},
+    ]
+  },
+  months: {
+    name:'Months', icon:'🗓️',
+    words:[
+      {en:'January',es:'Enero',hint:'eh-NEH-roh',img:'🗓️',alt:['enero','eneroh','e nero','ehnehroh','enero','enairoh','enero','enerro']},
+      {en:'February',es:'Febrero',hint:'feh-BREH-roh',img:'🗓️',alt:['febrero','febreroh','fe brero','fehbrehro','febreiro','febrero','febraro']},
+      {en:'March',es:'Marzo',hint:'MAHR-soh',img:'🗓️',alt:['marzo','marsoh','mar zo','mahrsoh','marso','martho','marzzo','mahrso']},
+      {en:'April',es:'Abril',hint:'ah-BREEL',img:'🗓️',alt:['abril','abreel','a bril','ahbreel','abrill','abriel','ahbril','abrihl']},
+      {en:'May',es:'Mayo',hint:'MAH-yoh',img:'🗓️',alt:['mayo','mayoh','ma yo','mahyoh','maioh','mahyo','mayo','mayyo','mio']},
+      {en:'June',es:'Junio',hint:'HOO-nee-oh',img:'🗓️',alt:['junio','hunioh','ju nio','hooneoh','junioh','huneo','junyo','juneoh']},
+      {en:'July',es:'Julio',hint:'HOO-lee-oh',img:'🗓️',alt:['julio','hulioh','ju lio','hooleeoh','julioh','huleo','julyo','juleoh']},
+      {en:'August',es:'Agosto',hint:'ah-GOHS-toh',img:'🗓️',alt:['agosto','agostoh','a gosto','ahgohstoh','agosto','ahgosto','agossto']},
+      {en:'September',es:'Septiembre',hint:'sehp-tee-EHM-breh',img:'🗓️',alt:['septiembre','setiembre','sep tiembre','sehpteembreh','septiembreh','setiembre','septiehmbray']},
+      {en:'October',es:'Octubre',hint:'ohk-TOO-breh',img:'🗓️',alt:['octubre','oktubreh','oc tubre','ohktoobreh','octubre','oktoobre','octubreh']},
+      {en:'November',es:'Noviembre',hint:'noh-bee-EHM-breh',img:'🗓️',alt:['noviembre','noviembreh','no viembre','nohbeembreh','noviehmbray','novyembre','novembreh']},
+      {en:'December',es:'Diciembre',hint:'dee-see-EHM-breh',img:'🗓️',alt:['diciembre','disiembreh','di ciembre','deeseembreh','diciehmbray','disyembre','diciembreh']},
+    ]
+  },
+  transport: {
+    name:'Transportation', icon:'🚗',
+    words:[
+      {en:'Car',es:'Carro',hint:'KAH-rroh',img:'🚗',alt:['carro','caroh','ca rro','kahrroh','caro','karroh','carroh','carro','karo']},
+      {en:'Bus',es:'Autobús',hint:'ow-toh-BOOS',img:'🚌',alt:['autobus','autobús','auto bus','owtohboos','autoboos','ahtobus','autobus','awtoboos']},
+      {en:'Airplane',es:'Avión',hint:'ah-bee-OHN',img:'✈️',alt:['avion','avión','a vion','ahbeeohn','aviohn','abiohn','aveon','avyohn']},
+      {en:'Bicycle',es:'Bicicleta',hint:'bee-see-KLEH-tah',img:'🚲',alt:['bicicleta','bisikleta','bici cleta','beeseeklehtah','bicicletah','bisikletah','bicicletta']},
+      {en:'Train',es:'Tren',hint:'trehn',img:'🚆',alt:['tren','trén','tre n','trehn','trenn','train','tran','tren','trein','trenn','treen']},
+      {en:'Boat',es:'Barco',hint:'BAHR-koh',img:'⛵',alt:['barco','barcoh','bar co','bahrkoh','barko','bahrcoh','barcho','barcco']},
+      {en:'Helicopter',es:'Helicóptero',hint:'eh-lee-KOHP-teh-roh',img:'🚁',alt:['helicoptero','helicóptero','heli coptero','ehleekohptehroh','helikoptero','elicoptero']},
+      {en:'Motorcycle',es:'Moto',hint:'MOH-toh',img:'🏍️',alt:['moto','motoh','mo to','mohtoh','motto','mohto','motoo','mooto','mottoh']},
+      {en:'Truck',es:'Camión',hint:'kah-mee-OHN',img:'🚛',alt:['camion','camión','ca mion','kahmeohn','camiohn','kamyohn','cameon','camiohn']},
+      {en:'Taxi',es:'Taxi',hint:'TAHK-see',img:'🚕',alt:['taxi','tahksee','tak si','taksee','taxy','taxee','taksi','tahksi','taxie']},
+    ]
+  },
   colors: {
     name:'Colors', icon:'🎨',
     words:[
